@@ -1,0 +1,57 @@
+streamlit
+langchain
+langchain_ollama
+selenium
+beautifulsoup4
+lxml
+html5lib
+python-dotenv
+
+import bs4 as bs
+import requests
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+import time
+import textblob
+from textblob import TextBlob
+
+url = 'https://www.corriere.it/esteri/24_dicembre_25/aereo-precipita-kazakistan-ff5ccfe7-a786-4178-a06a-1d0589d31xlk.shtml?refresh_ce'
+response = requests.get(url)
+if response.status_code == 200:
+    html_content = response.text
+else:
+    print(f"Failed to retrieve the web page. Status code: {response.status_code}")
+soup = bs.BeautifulSoup(html_content, 'html.parser')
+
+def get_meta():
+    meta_tags = soup.find_all('meta')
+    metadata = {}
+    for tag in meta_tags:
+        if 'name' in tag.attrs:
+            name = tag.attrs['name']
+            content = tag.attrs.get('content', '')
+            metadata[name] = content
+        elif 'property' in tag.attrs:
+            _property = tag.attrs['property']
+            content = tag.attrs.get('content', '')
+            metadata[_property] = content
+    return metadata
+
+def get_content():
+    driver = webdriver.Chrome()
+    driver.get(url)
+    time.sleep(1)
+    data = driver.find_element(By.XPATH, '/html/body').text
+    driver.close()
+    return data
+_data = get_content()
+blob = TextBlob(_data)
+print("######################   WEBSITE METADATA IS:    #####################")
+metadata = get_meta()
+for key, value in metadata.items():
+    if 'og' not in key:
+        continue
+    print(f"{key}: {value}")
+print("#######################  WEBSITE CONTENT IS:     ##########################")
+print(_data)
+print("#######################  WEBSITE SENTIMENT IS:    ##########################")
